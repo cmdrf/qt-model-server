@@ -84,7 +84,7 @@ void JsonViewModel::receiveMessage(const QString& message)
 				return;
 			}
 			QJsonObject item = itemIt->toObject();
-			if(m_useColumns)
+			if(mUseColumns)
 			{
 				for(auto headerIt = mHeaderData.begin(); headerIt != mHeaderData.end(); ++headerIt)
 				{
@@ -213,7 +213,7 @@ QJsonObject JsonViewModel::fetchRows(int start, int end)
 	{
 		QString key;
 		QJsonObject outValue;
-		if(m_useColumns)
+		if(mUseColumns)
 		{
 			for(auto it = mHeaderData.begin(); it != mHeaderData.end(); ++it)
 			{
@@ -266,7 +266,7 @@ int JsonViewModel::getRowForKey(const QString& key)
 			if(!knownRows.contains(i))
 			{
 				QString value;
-				if(m_useColumns)
+				if(mUseColumns)
 				{
 					QModelIndex index = m_model->index(i, mKeyItem);
 					value = m_model->data(index).toString();
@@ -282,5 +282,5 @@ int JsonViewModel::getRowForKey(const QString& key)
 			}
 		}
 	}
-	return -1;
+	return -1; // Row not found
 }

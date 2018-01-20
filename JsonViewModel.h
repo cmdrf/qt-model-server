@@ -1,5 +1,5 @@
-#ifndef JSONMODELVIEW_H
-#define JSONMODELVIEW_H
+#ifndef JSONVIEWMODEL_H
+#define JSONVIEWMODEL_H
 
 #include <QObject>
 #include <QVector>
@@ -7,15 +7,23 @@
 
 class QAbstractItemModel;
 
+/// Provides a JSON message interface to a QAbstractItemModel
+/** Set the model property for the QAbstractItemModel side. Connect
+	sendMessage() signal and receiveMessage() slot for the JSON side. */
 class JsonViewModel : public QObject
 {
 	Q_OBJECT
 
 	Q_PROPERTY(QAbstractItemModel* model READ model WRITE setModel NOTIFY modelChanged)
 
-	/** Role or column. */
+	/// Item to use as unique key
+	/** Role or column.
+		@see keyItem()
+		@see setKeyItem() */
 	Q_PROPERTY(int keyItem READ keyItem WRITE setKeyItem NOTIFY keyItemChanged)
 
+	/// Use multiple columns with a single role
+	/** When false use multiple roles with a single column (QML style). */
 	Q_PROPERTY(bool useColumns READ useColumns WRITE setUseColumns NOTIFY useColumnsChanged)
 
 public:
@@ -27,7 +35,7 @@ public:
 
 	QString entireData();
 
-	bool useColumns() const {return m_useColumns;}
+	bool useColumns() const {return mUseColumns;}
 
 signals:
 	void sendMessage(const QString& message);
@@ -39,7 +47,10 @@ signals:
 	void useColumnsChanged(bool useColumns);
 
 public slots:
+	/// Send entire model data as a JSON message
+	/** Call this e.g. when a new client connects. */
 	void sendEntireData();
+
 	void receiveMessage(const QString& message);
 
 	void setModel(QAbstractItemModel* model);
@@ -48,11 +59,11 @@ public slots:
 
 	void setUseColumns(bool useColumns)
 	{
-		if (m_useColumns == useColumns)
+		if (mUseColumns == useColumns)
 			return;
 
-		m_useColumns = useColumns;
-		emit useColumnsChanged(m_useColumns);
+		mUseColumns = useColumns;
+		emit useColumnsChanged(mUseColumns);
 	}
 
 protected slots:
@@ -74,7 +85,7 @@ private:
 	QHash<int, QString> mHeaderData;
 	QHash<QString, int> mKeyToRowCache;
 	int mKeyItem = 0;
-	bool m_useColumns;
+	bool mUseColumns = false;
 };
 
-#endif // JSONMODELVIEW_H
+#endif // JSONVIEWMODEL_H

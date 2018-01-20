@@ -15,7 +15,9 @@ public:
 	explicit WebSocketModelServer(QObject* parent = nullptr);
 	~WebSocketModelServer();
 
-	/** All models must be registered before calling listen()! */
+	/// Add a model to serve
+	/** Mutiple models can be served by setting a different path for each.
+		All models must be registered before calling listen()! */
 	void setModel(QAbstractItemModel* model, int keyRole, const QString& path = "/", bool useColumns = false);
 
 	void listen(quint16 port);
