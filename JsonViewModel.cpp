@@ -24,35 +24,6 @@ QString JsonViewModel::entireData()
 	return QString::fromUtf8(outDocument.toJson());
 }
 
-static QJsonValue toJsonValue(const QVariant& variant)
-{
-	if(variant.type() == QVariant::Bool)
-		return QJsonValue(variant.toBool());
-	else if(variant.type() == QVariant::Double)
-		return QJsonValue(variant.toDouble());
-	else if(variant.type() == QVariant::Int)
-		return QJsonValue(variant.toInt());
-	else if(variant.type() == QVariant::LongLong)
-		return QJsonValue(variant.toLongLong());
-	else if(variant.canConvert(QVariant::String))
-		return QJsonValue(variant.toString());
-	else
-		return QJsonValue();
-	// TODO: Maps and lists
-}
-
-QVariant toVariant(const QJsonValue& value)
-{
-	if(value.isBool())
-		return value.toBool();
-	if(value.isDouble())
-		return value.toDouble();
-	if(value.isString())
-		return value.toString();
-	return QVariant();
-	// TODO: Maps and lists
-}
-
 void JsonViewModel::sendEntireData()
 {
 	emit sendMessage(entireData());
@@ -120,7 +91,7 @@ void JsonViewModel::receiveMessage(const QString& message)
 					if(item.contains(headerIt.value()) && headerIt.key() != mKeyItem)
 					{
 						QModelIndex index = m_model->index(row, headerIt.key());
-						QVariant value = toVariant(item[headerIt.value()]);
+						QVariant value = item[headerIt.value()].toVariant();
 						m_model->setData(index, value);
 //						qDebug() << "setData(" << index << "," << value << ")";
 					}
@@ -247,9 +218,8 @@ QJsonObject JsonViewModel::fetchRows(int start, int end)
 			for(auto it = mHeaderData.begin(); it != mHeaderData.end(); ++it)
 			{
 				QModelIndex index = m_model->index(i, it.key());
-//				qDebug() << "Column:" << it.value();
 				if(it.key() != mKeyItem)
-					outValue.insert(it.value(), toJsonValue(m_model->data(index)));
+					outValue.insert(it.value(), QJsonValue::fromVariant(m_model->data(index)));
 			}
 			QModelIndex index = m_model->index(i, mKeyItem);
 			key = m_model->data(index).toString();
@@ -274,9 +244,8 @@ QJsonObject JsonViewModel::fetchRowRoles(const QModelIndex& index)
 	QJsonObject outValue;
 	for(auto it = mRoleNames.begin(); it != mRoleNames.end(); ++it)
 	{
-//		qDebug() << "Role:" << it.value();
 		if(it.key() != mKeyItem)
-			outValue.insert(it.value(), toJsonValue(m_model->data(index, it.key())));
+			outValue.insert(it.value(), QJsonValue::fromVariant(m_model->data(index, it.key())));
 	}
 
 	return outValue;
