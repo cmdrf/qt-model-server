@@ -9,7 +9,8 @@ class QAbstractItemModel;
 
 /// Provides a JSON message interface to a QAbstractItemModel
 /** Set the model property for the QAbstractItemModel side. Connect
-	sendMessage() signal and receiveMessage() slot for the JSON side. */
+	sendMessageAsString() or sendMessageAsByteArray() signal and
+	receiveMessage() slot for the JSON side. */
 class JsonViewModel : public QObject
 {
 	Q_OBJECT
