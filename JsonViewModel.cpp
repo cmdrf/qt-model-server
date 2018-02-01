@@ -4,37 +4,35 @@
 #include <QJsonArray>
 #include <QAbstractItemModel>
 #include <QDebug>
+#include <QMetaMethod>
 
 JsonViewModel::JsonViewModel(QObject* parent) : QObject(parent)
 {
 
 }
 
-QString JsonViewModel::entireData()
+void JsonViewModel::sendEntireData()
 {
-	if(!m_model)
-		return QString();
-
 	int rowCount = m_model->rowCount();
 
 	QJsonObject outObject;
 	outObject.insert(QStringLiteral("operation"), QStringLiteral("data"));
 	outObject.insert(QStringLiteral("items"), fetchRows(0, rowCount - 1));
 	QJsonDocument outDocument(outObject);
-	return QString::fromUtf8(outDocument.toJson());
-}
-
-void JsonViewModel::sendEntireData()
-{
-	emit sendMessage(entireData());
+	sendMessage(outDocument);
 }
 
 void JsonViewModel::receiveMessage(const QString& message)
 {
+	receiveMessage(message.toUtf8());
+}
+
+void JsonViewModel::receiveMessage(const QByteArray& message)
+{
 	if(!m_model)
 		return;
-	qDebug() << message;
-	auto document = QJsonDocument::fromJson(message.toUtf8());
+
+	auto document = QJsonDocument::fromJson(message);
 	if(!document.isObject())
 	{
 		qWarning() << "Message is not a JSON object";
@@ -155,19 +153,30 @@ void JsonViewModel::setKeyItem(int keyItem)
 	emit keyItemChanged(mKeyItem);
 }
 
+void JsonViewModel::setUseColumns(bool useColumns)
+{
+	if (mUseColumns == useColumns)
+		return;
+
+	mUseColumns = useColumns;
+	emit useColumnsChanged(mUseColumns);
+}
+
 void JsonViewModel::dataChanged(const QModelIndex& topLeft, const QModelIndex& bottomRight, const QVector<int>& roles)
 {
+	Q_UNUSED(roles);
 	Q_ASSERT(m_model);
 
 	QJsonObject outObject;
 	outObject.insert(QStringLiteral("operation"), QStringLiteral("dataChanged"));
 	outObject.insert(QStringLiteral("items"), fetchRows(topLeft.row(), bottomRight.row()));
 	QJsonDocument outDocument(outObject);
-	emit sendMessage(QString::fromUtf8(outDocument.toJson()));
+	sendMessage(outDocument);
 }
 
 void JsonViewModel::rowsAboutToBeRemoved(const QModelIndex& parent, int start, int end)
 {
+	Q_UNUSED(parent);
 	Q_ASSERT(m_model);
 
 	mKeyToRowCache.clear(); // TODO
@@ -184,11 +193,12 @@ void JsonViewModel::rowsAboutToBeRemoved(const QModelIndex& parent, int start, i
 	outObject.insert(QStringLiteral("items"), items);
 
 	QJsonDocument outDocument(outObject);
-	emit sendMessage(QString::fromUtf8(outDocument.toJson()));
+	sendMessage(outDocument);
 }
 
 void JsonViewModel::rowsInserted(const QModelIndex& parent, int start, int end)
 {
+	Q_UNUSED(parent);
 	Q_ASSERT(m_model);
 
 	mKeyToRowCache.clear(); // TODO
@@ -197,7 +207,7 @@ void JsonViewModel::rowsInserted(const QModelIndex& parent, int start, int end)
 	outObject.insert(QStringLiteral("operation"), QStringLiteral("inserted"));
 	outObject.insert(QStringLiteral("items"), fetchRows(start, end));
 	QJsonDocument outDocument(outObject);
-	emit sendMessage(QString::fromUtf8(outDocument.toJson()));
+	sendMessage(outDocument);
 }
 
 void JsonViewModel::modelReset()
@@ -283,4 +293,14 @@ int JsonViewModel::getRowForKey(const QString& key)
 		}
 	}
 	return -1; // Row not found
+}
+
+void JsonViewModel::sendMessage(const QJsonDocument& document)
+{
+	QByteArray data = document.toJson();
+	emit sendMessageAsByteArray(data);
+
+	static const QMetaMethod sendMessageAsStringSignal = QMetaMethod::fromSignal(&JsonViewModel::sendMessageAsString);
+	if(isSignalConnected(sendMessageAsStringSignal))
+		emit sendMessageAsString(QString::fromUtf8(data));
 }

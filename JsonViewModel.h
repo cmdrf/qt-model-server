@@ -33,12 +33,19 @@ public:
 
 	int keyItem() const {return mKeyItem;}
 
-	QString entireData();
-
 	bool useColumns() const {return mUseColumns;}
 
 signals:
-	void sendMessage(const QString& message);
+	/// Send message to client
+	/** QString variant.
+		@see sendMessageAsByteArray() */
+	void sendMessageAsString(const QString& message);
+
+	/// Send message to client
+	/** QByteArray variant. Prefer this over QString since QByteArray is the native format
+		of the Qt JSON serializer.
+		@see sendMessageAsString() */
+	void sendMessageAsByteArray(const QByteArray& message);
 
 	void modelChanged(QAbstractItemModel* model);
 
@@ -51,20 +58,20 @@ public slots:
 	/** Call this e.g. when a new client connects. */
 	void sendEntireData();
 
+	/// Handle JSON message from client
+	/** QString overload. */
 	void receiveMessage(const QString& message);
+
+	/// Handle JSON message from client
+	/** QByteArray overload. Prefer this over QString since QByteArray is the native format
+		of the Qt JSON serializer.*/
+	void receiveMessage(const QByteArray& message);
 
 	void setModel(QAbstractItemModel* model);
 
 	void setKeyItem(int keyItem);
 
-	void setUseColumns(bool useColumns)
-	{
-		if (mUseColumns == useColumns)
-			return;
-
-		mUseColumns = useColumns;
-		emit useColumnsChanged(mUseColumns);
-	}
+	void setUseColumns(bool useColumns);
 
 protected slots:
 	void dataChanged(const QModelIndex& topLeft, const QModelIndex& bottomRight, const QVector<int>& roles = QVector<int>());
@@ -78,6 +85,8 @@ private:
 
 	/** @see mKeyToRowCache */
 	int getRowForKey(const QString& key);
+
+	void sendMessage(const QJsonDocument& document);
 
 	QAbstractItemModel* m_model = nullptr;
 
