@@ -91,13 +91,20 @@ void JsonViewModel::receiveMessage(const QByteArray& message)
 						QModelIndex index = m_model->index(row, headerIt.key());
 						QVariant value = item[headerIt.value()].toVariant();
 						m_model->setData(index, value);
-//						qDebug() << "setData(" << index << "," << value << ")";
 					}
 				}
 			}
 			else
 			{
-				// TODO
+				for(auto roleIt = mRoleNames.begin(); roleIt != mRoleNames.end(); ++roleIt)
+				{
+					if(item.contains(roleIt.value()) && roleIt.key() != mKeyItem)
+					{
+						QModelIndex index = m_model->index(row, 0);
+						QVariant value = item[roleIt.value()].toVariant();
+						m_model->setData(index, value, roleIt.key());
+					}
+				}
 			}
 		}
 	}
