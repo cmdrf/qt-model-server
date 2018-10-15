@@ -82,39 +82,38 @@ void JsonViewModel::receiveMessage(const QByteArray& message)
 				return;
 			}
 			QJsonObject item = itemIt->toObject();
-			if(mUseColumns)
-			{
-				for(auto headerIt = mHeaderData.begin(); headerIt != mHeaderData.end(); ++headerIt)
-				{
-					if(item.contains(headerIt.value()) && headerIt.key() != mKeyItem)
-					{
-						QModelIndex index = m_model->index(row, headerIt.key());
-						QVariant value = item[headerIt.value()].toVariant();
-						m_model->setData(index, value);
-					}
-				}
-			}
-			else
-			{
-				for(auto roleIt = mRoleNames.begin(); roleIt != mRoleNames.end(); ++roleIt)
-				{
-					if(item.contains(roleIt.value()) && roleIt.key() != mKeyItem)
-					{
-						QModelIndex index = m_model->index(row, 0);
-						QVariant value = item[roleIt.value()].toVariant();
-						m_model->setData(index, value, roleIt.key());
-					}
-				}
-			}
+			setItemData(row, item);
 		}
 	}
 	else if(operationString == "remove")
 	{
-		// TODO
+		QJsonArray items = itemsIt->toArray();
+		for(auto itemIt = items.begin(); itemIt != items.end(); ++itemIt)
+		{
+			int row = getRowForKey(itemIt->toString());
+			if(row < 0)
+			{
+				qDebug() << "Row for" << itemIt->toString() << "not found";
+				continue;
+			}
+			if(!m_model->removeRow(row))
+				qDebug() << "Could not remove row";
+		}
 	}
 	else if(operationString == "insert")
 	{
-		// TODO
+		QJsonObject items = itemsIt->toObject();
+		int row = m_model->rowCount();
+		if(m_model->insertRows(row, items.size()))
+		{
+			for(auto itemIt = items.begin(); itemIt != items.end(); ++itemIt)
+			{
+				QJsonObject item = itemIt->toObject();
+				item.insert(keyName(), itemIt.key()); // Add key to item
+				setItemData(row, item);
+				row++;
+			}
+		}
 	}
 }
 
@@ -266,6 +265,34 @@ QJsonObject JsonViewModel::fetchRowRoles(const QModelIndex& index)
 	}
 
 	return outValue;
+}
+
+void JsonViewModel::setItemData(int row, const QJsonObject& item)
+{
+	if(mUseColumns)
+	{
+		for(auto headerIt = mHeaderData.begin(); headerIt != mHeaderData.end(); ++headerIt)
+		{
+			if(item.contains(headerIt.value()) && headerIt.key() != mKeyItem)
+			{
+				QModelIndex index = m_model->index(row, headerIt.key());
+				QVariant value = item[headerIt.value()].toVariant();
+				m_model->setData(index, value);
+			}
+		}
+	}
+	else
+	{
+		for(auto roleIt = mRoleNames.begin(); roleIt != mRoleNames.end(); ++roleIt)
+		{
+			if(item.contains(roleIt.value()) && roleIt.key() != mKeyItem)
+			{
+				QModelIndex index = m_model->index(row, 0);
+				QVariant value = item[roleIt.value()].toVariant();
+				m_model->setData(index, value, roleIt.key());
+			}
+		}
+	}
 }
 
 int JsonViewModel::getRowForKey(const QString& key)

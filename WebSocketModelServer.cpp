@@ -37,7 +37,7 @@ void WebSocketModelServer::listen(quint16 port)
 //		connect(m_pWebSocketServer, &QWebSocketServer::closed, this, &WebSocketViewModel::closed);
 	}
 	else
-		qWarning() << "listen() failed:" << mWebSocketServer->error();
+		qWarning() << "listen() failed:" << mWebSocketServer->errorString();
 }
 
 void WebSocketModelServer::onNewConnection()

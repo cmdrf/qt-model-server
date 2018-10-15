@@ -83,6 +83,10 @@ protected slots:
 private:
 	QJsonObject fetchRows(int start, int end);
 	QJsonObject fetchRowRoles(const QModelIndex& index);
+	void setItemData(int row, const QJsonObject& item);
+
+	/// Returns key header or role name
+	QString keyName() const {return mUseColumns ? mHeaderData[mKeyItem] : mRoleNames[mKeyItem];}
 
 	/** @see mKeyToRowCache */
 	int getRowForKey(const QString& key);
