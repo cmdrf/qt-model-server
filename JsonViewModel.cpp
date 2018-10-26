@@ -90,14 +90,23 @@ void JsonViewModel::receiveMessage(const QByteArray& message)
 		QJsonArray items = itemsIt->toArray();
 		for(auto itemIt = items.begin(); itemIt != items.end(); ++itemIt)
 		{
-			int row = getRowForKey(itemIt->toString());
+			int row = -1;
+			if(itemIt->isString())
+				row = getRowForKey(itemIt->toString());
+			else if(itemIt->isDouble())
+				row = getRowForKey(QString::number(itemIt->toDouble()));
+			else
+			{
+				qWarning() << "Invalid key type for item" << *itemIt;
+				continue;
+			}
 			if(row < 0)
 			{
-				qDebug() << "Row for" << itemIt->toString() << "not found";
+				qWarning() << "Row for" << itemIt->toString() << "not found";
 				continue;
 			}
 			if(!m_model->removeRow(row))
-				qDebug() << "Could not remove row";
+				qWarning() << "Could not remove row";
 		}
 	}
 	else if(operationString == "insert")
