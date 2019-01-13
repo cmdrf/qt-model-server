@@ -240,19 +240,25 @@ QJsonObject JsonViewModel::fetchRows(int start, int end)
 		QJsonObject outValue;
 		if(mUseColumns)
 		{
+			QModelIndex keyIndex = m_model->index(i, mKeyItem);
+			QVariant keyValue = m_model->data(keyIndex);
+			if(!keyValue.isValid())
+				continue; // Skip invalid keys
+			key = keyValue.toString();
 			for(auto it = mHeaderData.begin(); it != mHeaderData.end(); ++it)
 			{
 				QModelIndex index = m_model->index(i, it.key());
 				if(it.key() != mKeyItem)
 					outValue.insert(it.value(), QJsonValue::fromVariant(m_model->data(index)));
 			}
-			QModelIndex index = m_model->index(i, mKeyItem);
-			key = m_model->data(index).toString();
 		}
 		else
 		{
 			QModelIndex index = m_model->index(i, 0);
-			key = m_model->data(index, mKeyItem).toString();
+			QVariant keyValue = m_model->data(index, mKeyItem);
+			if(!keyValue.isValid())
+				continue; // Skip invalid keys
+			key = keyValue.toString();
 			outValue = fetchRowRoles(index);
 		}
 		outData.insert(key, outValue);
