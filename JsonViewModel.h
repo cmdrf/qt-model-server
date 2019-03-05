@@ -98,6 +98,7 @@ private:
 	QHash<int, QByteArray> mRoleNames;
 	QHash<int, QString> mHeaderData;
 	QHash<QString, int> mKeyToRowCache;
+	QVector<QString> mRowKeys;
 	int mKeyItem = 0;
 	bool mUseColumns = false;
 };

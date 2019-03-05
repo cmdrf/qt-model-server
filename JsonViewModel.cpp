@@ -84,6 +84,8 @@ void JsonViewModel::receiveMessage(const QByteArray& message)
 			QJsonObject item = itemIt->toObject();
 			setItemData(row, item);
 		}
+		if(!m_model->submit())
+			qWarning() << "Could not submit after changing";
 	}
 	else if(operationString == "remove")
 	{
@@ -108,21 +110,48 @@ void JsonViewModel::receiveMessage(const QByteArray& message)
 			if(!m_model->removeRow(row))
 				qWarning() << "Could not remove row";
 		}
+		if(!m_model->submit())
+			qWarning() << "Could not submit after removing";
 	}
 	else if(operationString == "insert")
 	{
-		QJsonObject items = itemsIt->toObject();
 		int row = m_model->rowCount();
-		if(m_model->insertRows(row, items.size()))
+
+		if(itemsIt->isObject())
 		{
-			for(auto itemIt = items.begin(); itemIt != items.end(); ++itemIt)
+			QJsonObject items = itemsIt->toObject();
+			if(m_model->insertRows(row, items.size()))
 			{
-				QJsonObject item = itemIt->toObject();
-				item.insert(keyName(), itemIt.key()); // Add key to item
-				setItemData(row, item);
-				row++;
+				for(auto itemIt = items.begin(); itemIt != items.end(); ++itemIt)
+				{
+					QJsonObject item = itemIt->toObject();
+					item.insert(keyName(), itemIt.key()); // Add key to item
+					setItemData(row, item);
+					row++;
+				}
 			}
+			else
+				qWarning() <<"Could not insert rows";
 		}
+		else if(itemsIt->isArray())
+		{
+			QJsonArray items = itemsIt->toArray();
+			if(m_model->insertRows(row, items.size()))
+			{
+				for(auto itemIt = items.begin(); itemIt != items.end(); ++itemIt)
+				{
+					QJsonObject item = itemIt->toObject();
+					setItemData(row, item);
+					row++;
+				}
+			}
+			else
+				qWarning() <<"Could not insert rows from array";
+		}
+		else
+			qWarning() << "Items to insert neither object nor array";
+		if(!m_model->submit())
+			qWarning() << "Could not submit after inserting";
 	}
 }
 
@@ -213,6 +242,7 @@ void JsonViewModel::rowsAboutToBeRemoved(const QModelIndex& parent, int start, i
 
 void JsonViewModel::rowsInserted(const QModelIndex& parent, int start, int end)
 {
+	qDebug() << "JsonViewModel::rowsInserted(" << start << "," << end << ")";
 	Q_UNUSED(parent);
 	Q_ASSERT(m_model);
 
@@ -228,6 +258,8 @@ void JsonViewModel::rowsInserted(const QModelIndex& parent, int start, int end)
 void JsonViewModel::modelReset()
 {
 	mKeyToRowCache.clear();
+	mRowKeys.clear();
+	mRowKeys.resize(m_model->rowCount());
 	sendEntireData();
 }
 
@@ -243,7 +275,9 @@ QJsonObject JsonViewModel::fetchRows(int start, int end)
 			QModelIndex keyIndex = m_model->index(i, mKeyItem);
 			QVariant keyValue = m_model->data(keyIndex);
 			if(!keyValue.isValid())
+			{
 				continue; // Skip invalid keys
+			}
 			key = keyValue.toString();
 			for(auto it = mHeaderData.begin(); it != mHeaderData.end(); ++it)
 			{
