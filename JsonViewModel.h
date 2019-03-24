@@ -27,6 +27,8 @@ class JsonViewModel : public QObject
 	/** When false use multiple roles with a single column (QML style). */
 	Q_PROPERTY(bool useColumns READ useColumns WRITE setUseColumns NOTIFY useColumnsChanged)
 
+	Q_PROPERTY(bool useRowBasedProtocol READ useRowBasedProtocol WRITE setUseRowBasedProtocol NOTIFY useRowBasedProtocolChanged)
+
 public:
 	explicit JsonViewModel(QObject* parent = nullptr);
 
@@ -35,6 +37,8 @@ public:
 	int keyItem() const {return mKeyItem;}
 
 	bool useColumns() const {return mUseColumns;}
+
+	bool useRowBasedProtocol() const {return mUseRowBasedProtocol;}
 
 signals:
 	/// Send message to client
@@ -53,6 +57,8 @@ signals:
 	void keyItemChanged(int keyItem);
 
 	void useColumnsChanged(bool useColumns);
+
+	void useRowBasedProtocolChanged(bool useRowBasedProtocol);
 
 public slots:
 	/// Send entire model data as a JSON message
@@ -74,6 +80,8 @@ public slots:
 
 	void setUseColumns(bool useColumns);
 
+	void setUseRowBasedProtocol(bool useRowBasedProtocol);
+
 protected slots:
 	void dataChanged(const QModelIndex& topLeft, const QModelIndex& bottomRight, const QVector<int>& roles = QVector<int>());
 	void rowsAboutToBeRemoved(const QModelIndex& parent, int start, int end);
@@ -82,7 +90,8 @@ protected slots:
 
 private:
 	QJsonObject fetchRows(int start, int end);
-	QJsonObject fetchRowRoles(const QModelIndex& index);
+	QJsonArray fetchRowsAsArray(int start, int end);
+	QJsonObject fetchRowRoles(const QModelIndex& index, bool includeKeyItem = false);
 	void setItemData(int row, const QJsonObject& item);
 
 	/// Returns key header or role name
@@ -101,6 +110,7 @@ private:
 	QVector<QString> mRowKeys;
 	int mKeyItem = 0;
 	bool mUseColumns = false;
+	bool mUseRowBasedProtocol = true;
 };
 
 #endif // JSONVIEWMODEL_H

@@ -6,6 +6,7 @@
 #include <QDebug>
 #include <QMetaMethod>
 
+
 JsonViewModel::JsonViewModel(QObject* parent) : QObject(parent)
 {
 
@@ -16,8 +17,17 @@ void JsonViewModel::sendEntireData()
 	int rowCount = m_model->rowCount();
 
 	QJsonObject outObject;
-	outObject.insert(QStringLiteral("operation"), QStringLiteral("data"));
-	outObject.insert(QStringLiteral("items"), fetchRows(0, rowCount - 1));
+	if(useRowBasedProtocol())
+	{
+		outObject.insert(QStringLiteral("operation"), QStringLiteral("rowData"));
+		outObject.insert(QStringLiteral("items"), fetchRowsAsArray(0, rowCount - 1));
+		outObject.insert(QStringLiteral("key"), keyName());
+	}
+	else
+	{
+		outObject.insert(QStringLiteral("operation"), QStringLiteral("data"));
+		outObject.insert(QStringLiteral("items"), fetchRows(0, rowCount - 1));
+	}
 	QJsonDocument outDocument(outObject);
 	sendMessage(outDocument);
 }
@@ -206,14 +216,35 @@ void JsonViewModel::setUseColumns(bool useColumns)
 	emit useColumnsChanged(mUseColumns);
 }
 
+void JsonViewModel::setUseRowBasedProtocol(bool useRowBasedProtocol)
+{
+	if (mUseRowBasedProtocol == useRowBasedProtocol)
+		return;
+
+	mUseRowBasedProtocol = useRowBasedProtocol;
+	emit useRowBasedProtocolChanged(mUseRowBasedProtocol);
+}
+
 void JsonViewModel::dataChanged(const QModelIndex& topLeft, const QModelIndex& bottomRight, const QVector<int>& roles)
 {
 	Q_UNUSED(roles);
 	Q_ASSERT(m_model);
 
 	QJsonObject outObject;
-	outObject.insert(QStringLiteral("operation"), QStringLiteral("dataChanged"));
-	outObject.insert(QStringLiteral("items"), fetchRows(topLeft.row(), bottomRight.row()));
+	if(mUseRowBasedProtocol)
+	{
+		const int first = topLeft.row();
+		const int last = bottomRight.row();
+		outObject.insert(QStringLiteral("operation"), QStringLiteral("rowDataChanged"));
+		outObject.insert(QStringLiteral("items"), fetchRowsAsArray(first, last));
+		outObject.insert(QStringLiteral("start"), first);
+		outObject.insert(QStringLiteral("end"), last);
+	}
+	else
+	{
+		outObject.insert(QStringLiteral("operation"), QStringLiteral("dataChanged"));
+		outObject.insert(QStringLiteral("items"), fetchRows(topLeft.row(), bottomRight.row()));
+	}
 	QJsonDocument outDocument(outObject);
 	sendMessage(outDocument);
 }
@@ -225,16 +256,26 @@ void JsonViewModel::rowsAboutToBeRemoved(const QModelIndex& parent, int start, i
 
 	mKeyToRowCache.clear(); // TODO
 
-	QJsonArray items;
-	for(int i = start; i <= end; ++i)
-	{
-		QModelIndex index = m_model->index(i, 0);
-		items.append(m_model->data(index, mKeyItem).toString());
-	}
-
 	QJsonObject outObject;
-	outObject.insert(QStringLiteral("operation"), QStringLiteral("removed"));
-	outObject.insert(QStringLiteral("items"), items);
+
+	if(mUseRowBasedProtocol)
+	{
+		outObject.insert(QStringLiteral("operation"), QStringLiteral("rowsRemoved"));
+		outObject.insert(QStringLiteral("start"), start);
+		outObject.insert(QStringLiteral("end"), end);
+	}
+	else
+	{
+		QJsonArray items;
+		for(int i = start; i <= end; ++i)
+		{
+			QModelIndex index = m_model->index(i, 0);
+			items.append(m_model->data(index, mKeyItem).toString());
+		}
+
+		outObject.insert(QStringLiteral("operation"), QStringLiteral("removed"));
+		outObject.insert(QStringLiteral("items"), items);
+	}
 
 	QJsonDocument outDocument(outObject);
 	sendMessage(outDocument);
@@ -242,15 +283,24 @@ void JsonViewModel::rowsAboutToBeRemoved(const QModelIndex& parent, int start, i
 
 void JsonViewModel::rowsInserted(const QModelIndex& parent, int start, int end)
 {
-	qDebug() << "JsonViewModel::rowsInserted(" << start << "," << end << ")";
 	Q_UNUSED(parent);
 	Q_ASSERT(m_model);
 
 	mKeyToRowCache.clear(); // TODO
 
 	QJsonObject outObject;
-	outObject.insert(QStringLiteral("operation"), QStringLiteral("inserted"));
-	outObject.insert(QStringLiteral("items"), fetchRows(start, end));
+	if(mUseRowBasedProtocol)
+	{
+		outObject.insert(QStringLiteral("operation"), QStringLiteral("rowsInserted"));
+		outObject.insert(QStringLiteral("items"), fetchRowsAsArray(start, end));
+		outObject.insert(QStringLiteral("start"), start);
+		outObject.insert(QStringLiteral("end"), end);
+	}
+	else
+	{
+		outObject.insert(QStringLiteral("operation"), QStringLiteral("inserted"));
+		outObject.insert(QStringLiteral("items"), fetchRows(start, end));
+	}
 	QJsonDocument outDocument(outObject);
 	sendMessage(outDocument);
 }
@@ -302,14 +352,39 @@ QJsonObject JsonViewModel::fetchRows(int start, int end)
 	return outData;
 }
 
-QJsonObject JsonViewModel::fetchRowRoles(const QModelIndex& index)
+QJsonArray JsonViewModel::fetchRowsAsArray(int start, int end)
+{
+	QJsonArray out;
+	for(int i = start; i <= end; ++i)
+	{
+		QJsonObject outValue;
+		if(mUseColumns)
+		{
+			for(auto it = mHeaderData.begin(); it != mHeaderData.end(); ++it)
+			{
+				QModelIndex index = m_model->index(i, it.key());
+				outValue.insert(it.value(), QJsonValue::fromVariant(m_model->data(index)));
+			}
+		}
+		else
+		{
+			QModelIndex index = m_model->index(i, 0);
+			outValue = fetchRowRoles(index, true);
+		}
+		out.append(outValue);
+	}
+
+	return out;
+}
+
+QJsonObject JsonViewModel::fetchRowRoles(const QModelIndex& index, bool includeKeyItem)
 {
 	Q_ASSERT(m_model);
 
 	QJsonObject outValue;
 	for(auto it = mRoleNames.begin(); it != mRoleNames.end(); ++it)
 	{
-		if(it.key() != mKeyItem)
+		if(includeKeyItem || it.key() != mKeyItem)
 			outValue.insert(it.value(), QJsonValue::fromVariant(m_model->data(index, it.key())));
 	}
 
@@ -352,6 +427,7 @@ int JsonViewModel::getRowForKey(const QString& key)
 		return mKeyToRowCache.value(key);
 	else
 	{
+		qDebug() << "Row not found in Cache";
 		QList<int> knownRows = mKeyToRowCache.values();
 		int rowCount = m_model->rowCount();
 		for(int i = 0; i < rowCount; ++i)
@@ -369,6 +445,7 @@ int JsonViewModel::getRowForKey(const QString& key)
 					QModelIndex index = m_model->index(i, 0);
 					value = m_model->data(index, mKeyItem).toString();
 				}
+				qDebug() << value;
 				mKeyToRowCache[value] = i;
 				if(value == key)
 					return i;
