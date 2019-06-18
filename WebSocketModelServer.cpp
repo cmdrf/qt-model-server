@@ -2,6 +2,9 @@
 #include <QWebSocketServer>
 #include <QWebSocket>
 
+namespace qtmodelserver
+{
+
 WebSocketModelServer::WebSocketModelServer(QObject* parent) :
 	QObject(parent),
 	mWebSocketServer(new QWebSocketServer(QStringLiteral("Echo Server"), QWebSocketServer::NonSecureMode, this))
@@ -79,3 +82,5 @@ void WebSocketModelServer::socketDisconnected()
 		client->deleteLater();
 	}
 }
+
+} // namespace qtmodelserver

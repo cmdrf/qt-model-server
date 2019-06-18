@@ -6,6 +6,8 @@
 #include <QDebug>
 #include <QMetaMethod>
 
+namespace qtmodelserver
+{
 
 JsonViewModel::JsonViewModel(QObject* parent) : QObject(parent)
 {
@@ -464,3 +466,5 @@ void JsonViewModel::sendMessage(const QJsonDocument& document)
 	if(isSignalConnected(sendMessageAsStringSignal))
 		Q_EMIT sendMessageAsString(QString::fromUtf8(data));
 }
+
+} // namespace qtmodelserver

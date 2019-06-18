@@ -1,5 +1,5 @@
-#ifndef WEBSOCKETMODELSERVER_H
-#define WEBSOCKETMODELSERVER_H
+#ifndef QTMODELSERVER_WEBSOCKETMODELSERVER_H
+#define QTMODELSERVER_WEBSOCKETMODELSERVER_H
 
 #include "JsonViewModel.h"
 #include <QObject>
@@ -7,6 +7,9 @@
 
 class QWebSocketServer;
 class QWebSocket;
+
+namespace qtmodelserver
+{
 
 class WebSocketModelServer : public QObject
 {
@@ -36,4 +39,6 @@ private:
 	QList<QWebSocket*> m_clients;
 };
 
-#endif // WEBSOCKETMODELSERVER_H
+}
+
+#endif // QTMODELSERVER_WEBSOCKETMODELSERVER_H

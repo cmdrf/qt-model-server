@@ -1,11 +1,14 @@
-#ifndef JSONVIEWMODEL_H
-#define JSONVIEWMODEL_H
+#ifndef QTMODELSERVER_JSONVIEWMODEL_H
+#define QTMODELSERVER_JSONVIEWMODEL_H
 
 #include <QObject>
 #include <QVector>
 #include <QHash>
 
 class QAbstractItemModel;
+
+namespace qtmodelserver
+{
 
 /// Provides a JSON message interface to a QAbstractItemModel
 /** Set the model property for the QAbstractItemModel side. Connect
@@ -113,4 +116,6 @@ private:
 	bool mUseRowBasedProtocol = true;
 };
 
-#endif // JSONVIEWMODEL_H
+} // namespace qtmodelserver
+
+#endif // QTMODELSERVER_JSONVIEWMODEL_H
