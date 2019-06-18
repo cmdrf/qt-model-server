@@ -16,7 +16,7 @@ JsonViewModel::JsonViewModel(QObject* parent) : QObject(parent)
 
 void JsonViewModel::sendEntireData()
 {
-	int rowCount = m_model->rowCount();
+	const int rowCount = m_model ? m_model->rowCount() : 0;
 
 	QJsonObject outObject;
 	if(useRowBasedProtocol())
