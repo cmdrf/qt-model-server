@@ -40,7 +40,7 @@ public:
 
 	bool useRowBasedProtocol() const {return mUseRowBasedProtocol;}
 
-signals:
+Q_SIGNALS:
 	/// Send message to client
 	/** QString variant.
 		@see sendMessageAsByteArray() */
@@ -60,7 +60,7 @@ signals:
 
 	void useRowBasedProtocolChanged(bool useRowBasedProtocol);
 
-public slots:
+public Q_SLOTS:
 	/// Send entire model data as a JSON message
 	/** Call this e.g. when a new client connects. */
 	void sendEntireData();
@@ -82,7 +82,7 @@ public slots:
 
 	void setUseRowBasedProtocol(bool useRowBasedProtocol);
 
-protected slots:
+protected Q_SLOTS:
 	void dataChanged(const QModelIndex& topLeft, const QModelIndex& bottomRight, const QVector<int>& roles = QVector<int>());
 	void rowsAboutToBeRemoved(const QModelIndex& parent, int start, int end);
 	void rowsInserted(const QModelIndex& parent, int start, int end);

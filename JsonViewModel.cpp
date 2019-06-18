@@ -195,7 +195,7 @@ void JsonViewModel::setModel(QAbstractItemModel* model)
 			mHeaderData[i] = m_model->headerData(i, Qt::Horizontal).toString();
 	}
 
-	emit modelChanged(m_model);
+	Q_EMIT modelChanged(m_model);
 }
 
 void JsonViewModel::setKeyItem(int keyItem)
@@ -204,7 +204,7 @@ void JsonViewModel::setKeyItem(int keyItem)
 		return;
 
 	mKeyItem = keyItem;
-	emit keyItemChanged(mKeyItem);
+	Q_EMIT keyItemChanged(mKeyItem);
 }
 
 void JsonViewModel::setUseColumns(bool useColumns)
@@ -213,7 +213,7 @@ void JsonViewModel::setUseColumns(bool useColumns)
 		return;
 
 	mUseColumns = useColumns;
-	emit useColumnsChanged(mUseColumns);
+	Q_EMIT useColumnsChanged(mUseColumns);
 }
 
 void JsonViewModel::setUseRowBasedProtocol(bool useRowBasedProtocol)
@@ -222,7 +222,7 @@ void JsonViewModel::setUseRowBasedProtocol(bool useRowBasedProtocol)
 		return;
 
 	mUseRowBasedProtocol = useRowBasedProtocol;
-	emit useRowBasedProtocolChanged(mUseRowBasedProtocol);
+	Q_EMIT useRowBasedProtocolChanged(mUseRowBasedProtocol);
 }
 
 void JsonViewModel::dataChanged(const QModelIndex& topLeft, const QModelIndex& bottomRight, const QVector<int>& roles)
@@ -458,9 +458,9 @@ int JsonViewModel::getRowForKey(const QString& key)
 void JsonViewModel::sendMessage(const QJsonDocument& document)
 {
 	QByteArray data = document.toJson();
-	emit sendMessageAsByteArray(data);
+	Q_EMIT sendMessageAsByteArray(data);
 
 	static const QMetaMethod sendMessageAsStringSignal = QMetaMethod::fromSignal(&JsonViewModel::sendMessageAsString);
 	if(isSignalConnected(sendMessageAsStringSignal))
-		emit sendMessageAsString(QString::fromUtf8(data));
+		Q_EMIT sendMessageAsString(QString::fromUtf8(data));
 }

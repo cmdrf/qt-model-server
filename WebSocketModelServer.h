@@ -22,11 +22,11 @@ public:
 
 	void listen(quint16 port);
 
-signals:
+Q_SIGNALS:
 
-public slots:
+public Q_SLOTS:
 
-protected slots:
+protected Q_SLOTS:
 	void onNewConnection();
 	void socketDisconnected();
 
