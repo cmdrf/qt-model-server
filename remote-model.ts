@@ -1,66 +1,62 @@
-import { Observable, of } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 
 export class RemoteModel {
   private items: any;
   private keyItem: string = "id";
   private socket: WebSocket;
+  private subject: BehaviorSubject<any[]> = new BehaviorSubject([]);
   
   constructor(private url: string) {
     this.socket = new WebSocket(this.url);
+    this.socket.onmessage = ((msg) => {
+      var obj = JSON.parse(msg.data);
+
+      if(obj.operation == "data") {
+        this.items = obj.items;
+      }
+      if(obj.operation == "rowData") {
+        this.items = obj.items;
+        this.keyItem = obj.key;
+      }
+      else if(obj.operation == "inserted") {
+        for(var id in obj.items) {
+          var item = obj.items[id];
+          this.items[id] = item;
+        }
+      }
+      else if(obj.operation == "rowsInserted") {
+        this.items.splice(obj.start, 0, ...obj.items);
+      }
+      else if(obj.operation == "removed") {
+        for(var id in obj.items) {
+          delete this.items[id];
+        }
+      }
+      else if(obj.operation == "rowsRemoved") {
+        this.items.splice(obj.start, obj.end - obj.start + 1);
+      }
+      else if(obj.operation == "dataChanged") {
+        for(var id in obj.items) {
+          var item = obj.items[id];
+          if(this.items.hasOwnProperty(id))
+            this.items[id] = item;
+        }
+      }
+      else if(obj.operation == "rowDataChanged") {
+        this.items.splice(obj.start, obj.end - obj.start + 1, ...obj.items);
+
+      }
+      if(Array.isArray(this.items))
+        this.subject.next(this.items);
+      else
+        this.subject.next(Object.keys(this.items).map(key => this.items[key]));       
+    });
+    this.socket.onerror = this.subject.error.bind(this.subject);
+    this.socket.onclose = this.subject.complete.bind(this.subject);
   }
 
-  getItems(): Observable<any[]> {
-    let observable = Observable.create(
-      observer => {
-          this.socket.onmessage = ((msg) => {
-            var obj = JSON.parse(msg.data);
-
-            if(obj.operation == "data") {
-              this.items = obj.items;
-            }
-            if(obj.operation == "rowData") {
-              this.items = obj.items;
-              this.keyItem = obj.key;
-            }
-            else if(obj.operation == "inserted") {
-              for(var id in obj.items) {
-                var item = obj.items[id];
-                this.items[id] = item;
-              }
-            }
-            else if(obj.operation == "rowsInserted") {
-              this.items.splice(obj.start, 0, ...obj.items);
-            }
-            else if(obj.operation == "removed") {
-              for(var id in obj.items) {
-                delete this.items[id];
-              }
-            }
-            else if(obj.operation == "rowsRemoved") {
-              this.items.splice(obj.start, obj.end - obj.start + 1);
-            }
-            else if(obj.operation == "dataChanged") {
-              for(var id in obj.items) {
-                var item = obj.items[id];
-                if(this.items.hasOwnProperty(id))
-                  this.items[id] = item;
-              }
-            }
-            else if(obj.operation == "rowDataChanged") {
-              this.items.splice(obj.start, obj.end - obj.start + 1, ...obj.items);
-
-            }
-            if(Array.isArray(this.items))
-              observer.next(this.items);
-            else
-              observer.next(Object.keys(this.items).map(key => this.items[key]));       
-          });
-          this.socket.onerror = observer.error.bind(observer);
-          this.socket.onclose = observer.complete.bind(observer);
-          return this.socket.close.bind(this.socket);
-      }
-    );
-    return observable;
+  getItems(): BehaviorSubject<any[]> {
+    return this.subject;
   }
 
   editItem(item: any) {
