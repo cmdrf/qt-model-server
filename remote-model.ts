@@ -33,9 +33,14 @@ export class RemoteModel {
   private items: any;
   private keyItem: string = "id";
   private socket: WebSocket;
-  private subject: BehaviorSubject<any[]> = new BehaviorSubject([]);
+  private itemsSubject: BehaviorSubject<any[]> = new BehaviorSubject([]);
+  private connectedSubject: BehaviorSubject<boolean> = new BehaviorSubject(false);
   
   constructor(private url: string) {
+    this.connect();
+  }
+
+  private connect() {
     this.socket = new WebSocket(this.url);
     this.socket.onmessage = ((msg) => {
       var obj = JSON.parse(msg.data);
@@ -76,16 +81,17 @@ export class RemoteModel {
 
       }
       if(Array.isArray(this.items))
-        this.subject.next(this.items);
+        this.itemsSubject.next(this.items);
       else
-        this.subject.next(Object.keys(this.items).map(key => this.items[key]));       
+        this.itemsSubject.next(Object.keys(this.items).map(key => this.items[key]));       
     });
-    this.socket.onerror = this.subject.error.bind(this.subject);
-    this.socket.onclose = this.subject.complete.bind(this.subject);
+    this.socket.onclose = this.disconnected.bind(this);
+    this.socket.onerror = this.disconnected.bind(this);
+    this.socket.onopen = _ => this.connectedSubject.next(true);
   }
 
   getItems(): BehaviorSubject<any[]> {
-    return this.subject;
+    return this.itemsSubject;
   }
 
   editItem(item: any) {
@@ -121,5 +127,14 @@ export class RemoteModel {
       items: items
     };
     this.socket.send(JSON.stringify(msg));
+  }
+
+  getConnected() : BehaviorSubject<boolean> {
+    return this.connectedSubject;
+  }
+
+  private disconnected() {
+    this.connectedSubject.next(false);
+    setTimeout(this.connect.bind(this), 5000);
   }
 }
