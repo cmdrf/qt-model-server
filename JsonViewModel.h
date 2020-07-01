@@ -59,6 +59,14 @@ class JsonViewModel : public QObject
 	/** When false use multiple roles with a single column (QML style). */
 	Q_PROPERTY(bool useColumns READ useColumns WRITE setUseColumns NOTIFY useColumnsChanged)
 
+	/// Use newer protocol version which retains element order
+	/** This uses "rowData", "rowDataChanged", "rowsRemoved" and "rowsInserted" operations, which have
+		slightly different contents. Row numbers instead of the keyItem are used to identify elements.
+		
+		Note that the keyItem is still used in messages from client to server, since row numbers can
+		change while the messages are in transit and would then refer to the wrong elements.
+		
+		Default is "true". */
 	Q_PROPERTY(bool useRowBasedProtocol READ useRowBasedProtocol WRITE setUseRowBasedProtocol NOTIFY useRowBasedProtocolChanged)
 
 public:
