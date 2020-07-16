@@ -220,10 +220,7 @@ void JsonViewModel::setModel(QAbstractItemModel* model)
 		connect(m_model, &QAbstractItemModel::rowsAboutToBeRemoved, this, &JsonViewModel::rowsAboutToBeRemoved);
 		connect(m_model, &QAbstractItemModel::rowsInserted, this, &JsonViewModel::rowsInserted);
 		connect(m_model, &QAbstractItemModel::modelReset, this, &JsonViewModel::modelReset);
-		mRoleNames = m_model->roleNames();
-		int columnCount = m_model->columnCount();
-		for(int i = 0; i < columnCount; ++i)
-			mHeaderData[i] = m_model->headerData(i, Qt::Horizontal).toString();
+		modelReset();
 	}
 
 	Q_EMIT modelChanged(m_model);
@@ -338,6 +335,10 @@ void JsonViewModel::rowsInserted(const QModelIndex& parent, int start, int end)
 
 void JsonViewModel::modelReset()
 {
+	mRoleNames = m_model->roleNames();
+	int columnCount = m_model->columnCount();
+	for(int i = 0; i < columnCount; ++i)
+		mHeaderData[i] = m_model->headerData(i, Qt::Horizontal).toString();
 	mKeyToRowCache.clear();
 	mRowKeys.clear();
 	mRowKeys.resize(m_model->rowCount());
