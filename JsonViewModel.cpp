@@ -253,6 +253,15 @@ void JsonViewModel::setUseRowBasedProtocol(bool useRowBasedProtocol)
 	Q_EMIT useRowBasedProtocolChanged(mUseRowBasedProtocol);
 }
 
+void JsonViewModel::setCacheRoleNames(bool cacheRoleNames)
+{
+	if (mCacheRoleNames == cacheRoleNames)
+		return;
+
+	mCacheRoleNames = cacheRoleNames;
+	Q_EMIT cacheRoleNamesChanged(mCacheRoleNames);
+}
+
 void JsonViewModel::dataChanged(const QModelIndex& topLeft, const QModelIndex& bottomRight, const QVector<int>& roles)
 {
 	Q_UNUSED(roles);
@@ -347,6 +356,9 @@ void JsonViewModel::modelReset()
 
 QJsonObject JsonViewModel::fetchRows(int start, int end)
 {
+	if(!mCacheRoleNames && !mUseColumns)
+		mRoleNames = m_model->roleNames();
+
 	QJsonObject outData;
 	for(int i = start; i <= end; ++i)
 	{
@@ -386,6 +398,9 @@ QJsonObject JsonViewModel::fetchRows(int start, int end)
 
 QJsonArray JsonViewModel::fetchRowsAsArray(int start, int end)
 {
+	if(!mCacheRoleNames && !mUseColumns)
+		mRoleNames = m_model->roleNames();
+
 	QJsonArray out;
 	for(int i = start; i <= end; ++i)
 	{

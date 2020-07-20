@@ -56,7 +56,7 @@ class JsonViewModel : public QObject
 	Q_PROPERTY(int keyItem READ keyItem WRITE setKeyItem NOTIFY keyItemChanged)
 
 	/// Use multiple columns with a single role
-	/** When false use multiple roles with a single column (QML style). */
+	/** When false, use multiple roles with a single column (QML style). */
 	Q_PROPERTY(bool useColumns READ useColumns WRITE setUseColumns NOTIFY useColumnsChanged)
 
 	/// Use newer protocol version which retains element order
@@ -69,6 +69,15 @@ class JsonViewModel : public QObject
 		Default is "true". */
 	Q_PROPERTY(bool useRowBasedProtocol READ useRowBasedProtocol WRITE setUseRowBasedProtocol NOTIFY useRowBasedProtocolChanged)
 
+	/// Enable caching of model role names
+	/** This is enabled by default. When enabled, QAbstractItemModel::roleNames() is only called
+		after the source model is set or reset, and the return value is cached. Disable this to
+		enable compatibility with some broken models (e.g. QML ListModel, see QTBUG-57971) at the
+		expense of some performance.
+		@note Role names are only used when useColumns is false.
+	*/
+	Q_PROPERTY(bool cacheRoleNames READ cacheRoleNames WRITE setCacheRoleNames NOTIFY cacheRoleNamesChanged)
+
 public:
 	explicit JsonViewModel(QObject* parent = nullptr);
 
@@ -79,6 +88,8 @@ public:
 	bool useColumns() const {return mUseColumns;}
 
 	bool useRowBasedProtocol() const {return mUseRowBasedProtocol;}
+
+	bool cacheRoleNames() const {return mCacheRoleNames;}
 
 Q_SIGNALS:
 	/// Send message to client
@@ -99,6 +110,8 @@ Q_SIGNALS:
 	void useColumnsChanged(bool useColumns);
 
 	void useRowBasedProtocolChanged(bool useRowBasedProtocol);
+
+	void cacheRoleNamesChanged(bool cacheRoleNames);
 
 public Q_SLOTS:
 	/// Send entire model data as a JSON message
@@ -121,6 +134,8 @@ public Q_SLOTS:
 	void setUseColumns(bool useColumns);
 
 	void setUseRowBasedProtocol(bool useRowBasedProtocol);
+
+	void setCacheRoleNames(bool cacheRoleNames);
 
 protected Q_SLOTS:
 	void dataChanged(const QModelIndex& topLeft, const QModelIndex& bottomRight, const QVector<int>& roles = QVector<int>());
@@ -151,6 +166,7 @@ private:
 	int mKeyItem = 0;
 	bool mUseColumns = false;
 	bool mUseRowBasedProtocol = true;
+	bool mCacheRoleNames = true;
 };
 
 } // namespace qtmodelserver
