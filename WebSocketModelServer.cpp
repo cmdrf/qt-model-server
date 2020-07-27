@@ -85,7 +85,7 @@ void WebSocketModelServer::onNewConnection()
 		connect(socket, SIGNAL(textMessageReceived(const QString&)), model, SLOT(receiveMessage(const QString&)));
 
 		// Hack because QWebSocket has no slot for sending messages:
-		auto msgConnection = connect(model, &JsonViewModel::sendMessageAsString, [socket](const QString& msg){socket->sendTextMessage(msg);});
+		auto msgConnection = connect(model, &JsonViewModel::sendMessageAsString, socket, [socket](const QString& msg){socket->sendTextMessage(msg);});
 		// Disconnecting is not done automatically, so do it manually:
 		connect(socket, &QObject::destroyed, [msgConnection](QObject*){disconnect(msgConnection);});
 
