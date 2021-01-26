@@ -2,7 +2,7 @@
 
 BSD 2-Clause License
 
-Copyright (c) 2018-2020, Fabian Herb
+Copyright (c) 2018-2021, Fabian Herb
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace qtmodelserver
 {
 
-JsonViewModel::JsonViewModel(QObject* parent) : QObject(parent)
+JsonViewModel::JsonViewModel(QObject* parent) :
+	QObject(parent),
+	mVariantToJsonValueFunction(QJsonValue::fromVariant),
+	mJsonValueToVariantFunction([](const QJsonValue& v){return v.toVariant();})
 {
 
 }
@@ -377,7 +380,7 @@ QJsonObject JsonViewModel::fetchRows(int start, int end)
 			{
 				QModelIndex index = m_model->index(i, it.key());
 				if(it.key() != mKeyItem)
-					outValue.insert(it.value(), QJsonValue::fromVariant(m_model->data(index)));
+					outValue.insert(it.value(), mVariantToJsonValueFunction(m_model->data(index)));
 			}
 		}
 		else
@@ -410,7 +413,7 @@ QJsonArray JsonViewModel::fetchRowsAsArray(int start, int end)
 			for(auto it = mHeaderData.begin(); it != mHeaderData.end(); ++it)
 			{
 				QModelIndex index = m_model->index(i, it.key());
-				outValue.insert(it.value(), QJsonValue::fromVariant(m_model->data(index)));
+				outValue.insert(it.value(), mVariantToJsonValueFunction(m_model->data(index)));
 			}
 		}
 		else
@@ -432,7 +435,7 @@ QJsonObject JsonViewModel::fetchRowRoles(const QModelIndex& index, bool includeK
 	for(auto it = mRoleNames.begin(); it != mRoleNames.end(); ++it)
 	{
 		if(includeKeyItem || it.key() != mKeyItem)
-			outValue.insert(it.value(), QJsonValue::fromVariant(m_model->data(index, it.key())));
+			outValue.insert(it.value(), mVariantToJsonValueFunction(m_model->data(index, it.key())));
 	}
 
 	return outValue;
@@ -447,7 +450,7 @@ void JsonViewModel::setItemData(int row, const QJsonObject& item)
 			if(item.contains(headerIt.value()) && headerIt.key() != mKeyItem)
 			{
 				QModelIndex index = m_model->index(row, headerIt.key());
-				QVariant value = item[headerIt.value()].toVariant();
+				QVariant value = mJsonValueToVariantFunction(item[headerIt.value()]);
 				m_model->setData(index, value);
 			}
 		}
@@ -459,7 +462,7 @@ void JsonViewModel::setItemData(int row, const QJsonObject& item)
 			if(item.contains(roleIt.value()) && roleIt.key() != mKeyItem)
 			{
 				QModelIndex index = m_model->index(row, 0);
-				QVariant value = item[roleIt.value()].toVariant();
+				QVariant value = mJsonValueToVariantFunction(item[roleIt.value()]);
 				m_model->setData(index, value, roleIt.key());
 			}
 		}

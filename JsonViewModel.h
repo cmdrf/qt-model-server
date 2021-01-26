@@ -2,7 +2,7 @@
 
 BSD 2-Clause License
 
-Copyright (c) 2018-2020, Fabian Herb
+Copyright (c) 2018-2021, Fabian Herb
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -33,6 +33,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QObject>
 #include <QVector>
 #include <QHash>
+
+#include <functional>
 
 class QAbstractItemModel;
 
@@ -90,6 +92,9 @@ public:
 	bool useRowBasedProtocol() const {return mUseRowBasedProtocol;}
 
 	bool cacheRoleNames() const {return mCacheRoleNames;}
+
+	void setVariantToJsonValueFunction(std::function<QJsonValue (const QVariant&)> variantToJsonValueFunction) {mVariantToJsonValueFunction = variantToJsonValueFunction;}
+	void setJsonValueToVariantFunction(std::function<QVariant (const QJsonValue&)> jsonValueToVariantFunction) {mJsonValueToVariantFunction = jsonValueToVariantFunction;}
 
 Q_SIGNALS:
 	/// Send message to client
@@ -167,6 +172,9 @@ private:
 	bool mUseColumns = false;
 	bool mUseRowBasedProtocol = true;
 	bool mCacheRoleNames = true;
+
+	std::function<QJsonValue (const QVariant&)> mVariantToJsonValueFunction;
+	std::function<QVariant (const QJsonValue&)> mJsonValueToVariantFunction;
 };
 
 } // namespace qtmodelserver

@@ -2,7 +2,7 @@
 
 BSD 2-Clause License
 
-Copyright (c) 2018-2020, Fabian Herb
+Copyright (c) 2018-2021, Fabian Herb
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -30,13 +30,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "WebSocketModelServer.h"
 #include <QWebSocketServer>
 #include <QWebSocket>
+#include <QJsonValue>
 
 namespace qtmodelserver
 {
 
 WebSocketModelServer::WebSocketModelServer(QObject* parent) :
 	QObject(parent),
-	mWebSocketServer(new QWebSocketServer(QStringLiteral("Echo Server"), QWebSocketServer::NonSecureMode, this))
+	mWebSocketServer(new QWebSocketServer(QStringLiteral("Echo Server"), QWebSocketServer::NonSecureMode, this)),
+	mVariantToJsonValueFunction(QJsonValue::fromVariant),
+	mJsonValueToVariantFunction([](const QJsonValue& v){return v.toVariant();})
+
 {
 
 }
@@ -56,6 +60,8 @@ void WebSocketModelServer::setModel(QAbstractItemModel* model, int keyRole, cons
 	m->setModel(model);
 	m->setKeyItem(keyRole);
 	m->setUseColumns(useColumns);
+	m->setJsonValueToVariantFunction(mJsonValueToVariantFunction);
+	m->setVariantToJsonValueFunction(mVariantToJsonValueFunction);
 	if(mModels.contains(path))
 		delete mModels.value(path);
 	mModels[path] = m;
@@ -85,7 +91,7 @@ void WebSocketModelServer::onNewConnection()
 		connect(socket, SIGNAL(textMessageReceived(const QString&)), model, SLOT(receiveMessage(const QString&)));
 
 		// Hack because QWebSocket has no slot for sending messages:
-		auto msgConnection = connect(model, &JsonViewModel::sendMessageAsString, socket, [socket](const QString& msg){socket->sendTextMessage(msg);});
+		auto msgConnection = connect(model, &JsonViewModel::sendMessageAsString, [socket](const QString& msg){socket->sendTextMessage(msg);});
 		// Disconnecting is not done automatically, so do it manually:
 		connect(socket, &QObject::destroyed, [msgConnection](QObject*){disconnect(msgConnection);});
 

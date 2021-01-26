@@ -2,7 +2,7 @@
 
 BSD 2-Clause License
 
-Copyright (c) 2018-2020, Fabian Herb
+Copyright (c) 2018-2021, Fabian Herb
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -54,6 +54,9 @@ public:
 
 	void listen(quint16 port);
 
+	void setVariantToJsonValueFunction(std::function<QJsonValue (const QVariant&)> variantToJsonValueFunction) {mVariantToJsonValueFunction = variantToJsonValueFunction;}
+	void setJsonValueToVariantFunction(std::function<QVariant (const QJsonValue&)> jsonValueToVariantFunction) {mJsonValueToVariantFunction = jsonValueToVariantFunction;}
+
 Q_SIGNALS:
 
 public Q_SLOTS:
@@ -66,6 +69,9 @@ private:
 	QWebSocketServer* mWebSocketServer;
 	QMap<QString, JsonViewModel*> mModels;
 	QList<QWebSocket*> m_clients;
+
+	std::function<QJsonValue (const QVariant&)> mVariantToJsonValueFunction;
+	std::function<QVariant (const QJsonValue&)> mJsonValueToVariantFunction;
 };
 
 }
